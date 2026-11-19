@@ -127,15 +127,24 @@ background:radial-gradient(80% 55% at 50% -12%,rgba(34,211,238,.3),transparent 6
 .aq-foot{position:relative;text-align:center;color:var(--aq-mut);font-size:.82rem;margin-top:26px}
 
 @media (max-width:899px){.aq-root{height:auto!important;display:block;padding:40px 18px 56px}.aq-fit{width:100%;max-width:420px;margin:0 auto}.aq-hero h1{font-size:2.8rem}.aq-plans{grid-template-columns:1fr;gap:44px}.aq-f{translate:0 0}}
-@media (prefers-reduced-motion:reduce){.aq-root *{animation:none!important}}
 
-.aq-fish,.aq-water,.aq-b,.aq-dr{will-change:transform}
+
 
 .aq-soda{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.aq-sb{position:absolute;top:0;bottom:0;animation:aq-rise 3.6s cubic-bezier(.3,.1,.7,.9) infinite;will-change:transform,opacity}
+.aq-sb{position:absolute;top:0;bottom:0;animation:aq-rise 3.6s cubic-bezier(.3,.1,.7,.9) infinite}
 .aq-sb i{position:absolute;left:0;bottom:0;border-radius:50%;border:1.2px solid rgba(255,255,255,.85);background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.75),transparent 62%);animation:aq-sw 1.3s ease-in-out infinite alternate}
 @keyframes aq-rise{0%{transform:translateY(0);opacity:0}7%{opacity:.9}88%{opacity:.7}100%{transform:translateY(-100%);opacity:0}}
 @keyframes aq-sw{from{transform:translateX(calc(var(--dx,6px)*-1))}to{transform:translateX(var(--dx,6px))}}
+
+/* tanks scrolled out of view stop animating */
+.aq-off *,.aq-off *::before,.aq-off *::after{animation-play-state:paused!important}
+/* phones/tablets: drop the GPU-heavy effects that make scrolling stutter (look stays near-identical) */
+@media (max-width:899px),(pointer:coarse){
+  .aq-gl{backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(150deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 45%,rgba(255,255,255,.09))}
+  .aq-tog{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(255,255,255,.1)}
+  .aq-water::after{mix-blend-mode:normal}
+  .aq-root::before{filter:none}
+}
 </style>
 </head>
 <body>
@@ -202,6 +211,7 @@ const armSensor = () => {
     window.addEventListener("click", ask, { once: true });
   }
 };
+const rupiah = (k) => k >= 1e3 ? String(+(k / 1e3).toFixed(2)).replace(".", ",") + " jt" : k + "K";
 const makeSoda = (n) => {
   const sites = Array.from({ length: 7 }, () => rnd(7, 93));
   return Array.from({ length: n }, (_, i) => {
@@ -229,11 +239,11 @@ const CREATURES = {
 const school = (t, a, b, ws) => ws.map((w) => ({ t, a, b, w, g: 1 }));
 const DEFAULT_PLANS = [
   {
-    name: "Spark",
+    name: "Pond",
     tagline: "Untuk pembuat mandiri dan eksperimen.",
-    monthly: 9,
-    yearly: 7,
-    cta: "Mulai dengan Spark",
+    monthly: 90,
+    yearly: 72,
+    cta: "Mulai dengan Pond",
     c: "#7dd3fc",
     k: "#06b6d4",
     d: "#0b4a7a",
@@ -242,11 +252,11 @@ const DEFAULT_PLANS = [
     fish: [...school("tetra", "#22d3ee", "#f0abfc", [44, 40, 38]), { t: "clown", w: 58 }, { t: "jelly", a: "#67e8f9", b: "#a5f3fc", w: 30 }]
   },
   {
-    name: "Prism",
+    name: "River",
     tagline: "Untuk tim yang rilis setiap minggu.",
-    monthly: 29,
-    yearly: 23,
-    cta: "Pilih Prism",
+    monthly: 300,
+    yearly: 240,
+    cta: "Pilih River",
     featured: true,
     c: "#e9a8ff",
     k: "#a855f7",
@@ -256,16 +266,16 @@ const DEFAULT_PLANS = [
     fish: [...school("tetra", "#c4b5fd", "#f472b6", [42, 38, 40, 36, 34]), { t: "puffer", a: "#fde047", b: "#f59e0b", w: 52 }, { t: "clown", w: 56 }, { t: "jelly", a: "#f0abfc", b: "#f5d0fe", w: 40 }]
   },
   {
-    name: "Nova",
+    name: "Ocean",
     tagline: "Untuk organisasi skala besar.",
-    monthly: 79,
-    yearly: 63,
+    monthly: 500,
+    yearly: 400,
     cta: "Hubungi kami",
     c: "#fcd34d",
     k: "#38bdf8",
     d: "#102a6b",
     base: 0.8,
-    features: ["Semua fitur Prism", "Penyimpanan 2 TB", "Manajer khusus", "SSO & log audit", "SLA uptime 99,99%"],
+    features: ["Semua fitur River", "Penyimpanan 2 TB", "Manajer khusus", "SSO & log audit", "SLA uptime 99,99%"],
     fish: [{ t: "whale", a: "#60a5fa", b: "#2563eb", w: 150 }, ...school("tetra", "#7dd3fc", "#fcd34d", [38, 36, 34]), { t: "puffer", a: "#86efac", b: "#16a34a", w: 48 }, { t: "turtle", a: "#4ade80", b: "#15803d", w: 66 }]
   }
 ];
@@ -307,7 +317,7 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
         else f.lead = lead;
       }
     });
-    ref.current = { W: 0, H: 0, Lc: 0, Lv: 0, Lt: 0, nid: 0, shake: 0, lat: 0, nextScat: 0, sway: motionValue(0), amp: motionValue(1), cur: { a: false, x: 0, y: 0 }, foods: [], fish, water: motionValue(0) };
+    ref.current = { vis: true, lastWh: -1, W: 0, H: 0, Lc: 0, Lv: 0, Lt: 0, nid: 0, shake: 0, lat: 0, nextScat: 0, sway: motionValue(0), amp: motionValue(1), cur: { a: false, x: 0, y: 0 }, foods: [], fish, water: motionValue(0) };
   }
   const s = ref.current;
   const [foods, setFoods] = useState([]);
@@ -369,7 +379,16 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
     m();
     const ro = new ResizeObserver(m);
     ro.observe(el);
-    return () => ro.disconnect();
+    s.vis = true;
+    const io = new IntersectionObserver(([en]) => {
+      s.vis = en.isIntersecting;
+      el.classList.toggle("aq-off", !en.isIntersecting);
+    }, { rootMargin: "120px" });
+    io.observe(el);
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+    };
   }, [cardRef, s]);
   useEffect(() => {
     if (!inView) return;
@@ -392,6 +411,7 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
   }, [yearly]);
   const stepRef = useRef();
   stepRef.current = (delta) => {
+    if (!s.vis) return;
     let dt = Math.min(0.05, delta / 1e3);
     const now = performance.now() / 1e3;
     if (reduce) {
@@ -400,6 +420,10 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
     } else {
       s.Lv += ((s.Lt - s.Lc) * 38 - s.Lv * 5.5) * dt;
       s.Lc = Math.max(0, s.Lc + s.Lv * dt);
+      if (Math.abs(s.Lt - s.Lc) < 4e-4 && Math.abs(s.Lv) < 4e-3 && !s.shake) {
+        s.Lc = s.Lt;
+        s.Lv = 0;
+      }
     }
     const { W, H } = s;
     if (!W) return;
@@ -415,7 +439,10 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
       s.nextScat = now + 0.7;
     }
     const wh = s.Lc * H;
-    s.water.set(wh);
+    if (wh !== s.lastWh) {
+      s.lastWh = wh;
+      s.water.set(wh);
+    }
     const surf = H - wh, top = surf + 14, bot = H - 38;
     let changed = false;
     for (let i = s.foods.length - 1; i >= 0; i--) {
@@ -509,7 +536,7 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
 }
 function Price({ value }) {
   const mv = useMotionValue(value);
-  const out = useTransform(mv, (v) => Math.round(v));
+  const out = useTransform(mv, (v) => Math.round(v) + "K");
   useEffect(() => {
     const c = animate(mv, value, { duration: 0.7, ease: [0.22, 1, 0.36, 1] });
     return () => c.stop();
@@ -546,7 +573,7 @@ function Tank({ plan, index, yearly, reduce, scale = 1, onSelect }) {
   const rotateY = useSpring(useTransform(px, [0, 1], [-6, 6]), spring);
   const slosh = useSpring(useTransform(px, [0, 1], [3.5, -3.5]), { stiffness: 90, damping: 9 });
   const sodaRef = useRef();
-  if (!sodaRef.current) sodaRef.current = makeSoda(34);
+  if (!sodaRef.current) sodaRef.current = makeSoda(typeof window !== "undefined" && window.innerWidth < 700 ? 20 : 34);
   const swayS = useSpring(eng.s.sway, { stiffness: 120, damping: 7 });
   const waterRot = useTransform([slosh, swayS], ([a, b]) => a + b);
   const gx = useTransform(px, (v) => v * 100), gy = useTransform(py, (v) => v * 100);
@@ -646,7 +673,7 @@ function Tank({ plan, index, yearly, reduce, scale = 1, onSelect }) {
       /* @__PURE__ */ R.createElement(motion.div, { className: "aq-sheen", style: { background: sheen } }),
       /* @__PURE__ */ R.createElement("div", { className: "aq-lid" }),
       /* @__PURE__ */ R.createElement("div", { className: "aq-edge" }),
-      /* @__PURE__ */ R.createElement(motion.div, { className: "aq-body", style: { x: frontX } }, /* @__PURE__ */ R.createElement("div", { className: "aq-row" }, /* @__PURE__ */ R.createElement("h2", null, plan.name), /* @__PURE__ */ R.createElement("span", { className: "aq-idx" }, "0", index + 1)), /* @__PURE__ */ R.createElement("p", { className: "aq-tag" }, plan.tagline), plan.featured && /* @__PURE__ */ R.createElement("span", { className: "aq-chip" }, "Paling dipilih"), /* @__PURE__ */ R.createElement("div", { className: "aq-price" }, /* @__PURE__ */ R.createElement("sup", null, "$"), /* @__PURE__ */ R.createElement(Price, { value: yearly ? plan.yearly : plan.monthly }), /* @__PURE__ */ R.createElement("span", null, "/ bln")), /* @__PURE__ */ R.createElement("p", { className: "aq-bill" }, yearly ? `Ditagih $${plan.yearly * 12} per tahun` : "Ditagih bulanan"), /* @__PURE__ */ R.createElement("hr", null), /* @__PURE__ */ R.createElement("ul", null, plan.features.map((f) => /* @__PURE__ */ R.createElement("li", { key: f }, /* @__PURE__ */ R.createElement(Check, null), f))), /* @__PURE__ */ R.createElement(motion.button, { className: "aq-cta", whileHover: { y: -2 }, whileTap: { scale: 0.96 }, onClick: click }, done ? "Kamu masuk \u2726" : /* @__PURE__ */ R.createElement(R.Fragment, null, plan.cta, " \u2192")))
+      /* @__PURE__ */ R.createElement(motion.div, { className: "aq-body", style: { x: frontX } }, /* @__PURE__ */ R.createElement("div", { className: "aq-row" }, /* @__PURE__ */ R.createElement("h2", null, plan.name), /* @__PURE__ */ R.createElement("span", { className: "aq-idx" }, "0", index + 1)), /* @__PURE__ */ R.createElement("p", { className: "aq-tag" }, plan.tagline), plan.featured && /* @__PURE__ */ R.createElement("span", { className: "aq-chip" }, "Paling dipilih"), /* @__PURE__ */ R.createElement("div", { className: "aq-price" }, /* @__PURE__ */ R.createElement("sup", null, "Rp"), /* @__PURE__ */ R.createElement(Price, { value: yearly ? plan.yearly : plan.monthly }), /* @__PURE__ */ R.createElement("span", null, "/ bln")), /* @__PURE__ */ R.createElement("p", { className: "aq-bill" }, yearly ? `Ditagih Rp ${rupiah(plan.yearly * 12)} per tahun` : "Ditagih bulanan"), /* @__PURE__ */ R.createElement("hr", null), /* @__PURE__ */ R.createElement("ul", null, plan.features.map((f) => /* @__PURE__ */ R.createElement("li", { key: f }, /* @__PURE__ */ R.createElement(Check, null), f))), /* @__PURE__ */ R.createElement(motion.button, { className: "aq-cta", whileHover: { y: -2 }, whileTap: { scale: 0.96 }, onClick: click }, done ? "Kamu masuk \u2726" : /* @__PURE__ */ R.createElement(R.Fragment, null, plan.cta, " \u2192")))
     )
   );
 }
@@ -662,7 +689,8 @@ function AquariumPricing({
   // scale the whole section to fit one screen, centred
 }) {
   const [yearly, setYearly] = useState(false);
-  const reduce = useReducedMotion();
+  const osReduce = useReducedMotion();
+  const reduce = typeof location !== "undefined" && /[?&]calm\b/.test(location.search) ? osReduce : false;
   const rootRef = useRef(null), fitRef = useRef(null);
   const [scale, setScale] = useState(1);
   useEffect(() => {
