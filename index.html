@@ -20,6 +20,21 @@ body {
   overflow: hidden;
 }
 
+/* narrow screens use the stacked layout, so the page must be able to scroll */
+@media (max-width: 899px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+  }
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+
 
 /* Everything is scoped under .aq-root. Override the variables to re-theme. */
 .aq-root{--aq-serif:"Instrument Serif","Playfair Display",Georgia,serif;--aq-sans:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;--aq-mut:rgba(255,255,255,.72);--aq-line:rgba(255,255,255,.16);
@@ -113,6 +128,8 @@ background:radial-gradient(80% 55% at 50% -12%,rgba(34,211,238,.3),transparent 6
 
 @media (max-width:899px){.aq-root{height:auto!important;display:block;padding:40px 18px 56px}.aq-fit{width:100%;max-width:420px;margin:0 auto}.aq-hero h1{font-size:2.8rem}.aq-plans{grid-template-columns:1fr;gap:44px}.aq-f{translate:0 0}}
 @media (prefers-reduced-motion:reduce){.aq-root *{animation:none!important}}
+
+.aq-fish,.aq-water,.aq-b,.aq-dr{will-change:transform}
 </style>
 </head>
 <body>
@@ -284,7 +301,7 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
   const [fx, setFx] = useState([]);
   const inView = useInView(cardRef, { amount: 0.25, once: true });
   const level = (y) => Math.min(0.92, plan.base + (y ? 0.08 : 0));
-  const push = (e) => setFx((a) => [...a.slice(-45), { id: ++s.nid, ...e }]);
+  const push = (e) => setFx((a) => [...a.slice(-26), { id: ++s.nid, ...e }]);
   const drop = useCallback((id) => setFx((a) => a.filter((e) => e.id !== id)), []);
   const bubble = (x, y) => {
     const wh = s.Lc * s.H;
@@ -359,10 +376,6 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
     s.Lv += 0.25;
     scatter(0.9);
     burst(8);
-    if (yearly) {
-      feed(s.W * 0.35, 0);
-      feed(s.W * 0.65, 0);
-    }
   }, [yearly]);
   const stepRef = useRef();
   stepRef.current = (delta) => {
@@ -411,8 +424,8 @@ function useTankEngine(cardRef, plan, yearly, reduce) {
       d.my.set(d.y);
     }
     if (changed) setFoods([...s.foods]);
-    if (Math.random() < dt * (1.4 + sh * 30)) bubble(rnd(20, W - 20), H - 40);
-    if (sh > 0.35 && wh > 100 && Math.random() < dt * sh * 7) push({ k: "d", x: rnd(0.1, 0.9) * W, y: surf, dx: rnd(-30, 30), h: rnd(18, 28 + sh * 50), dur: rnd(0.5, 0.9) });
+    if (Math.random() < dt * (1.4 + sh * 9)) bubble(rnd(20, W - 20), H - 40);
+    if (sh > 0.35 && wh > 100 && Math.random() < dt * sh * 3) push({ k: "d", x: rnd(0.1, 0.9) * W, y: surf, dx: rnd(-30, 30), h: rnd(18, 28 + sh * 50), dur: rnd(0.5, 0.9) });
     for (const f of s.fish) {
       f.t -= dt;
       if (sh > 0.12 && f.t > 0.7) f.t = rnd(0.15, 0.7);
@@ -541,9 +554,9 @@ function Tank({ plan, index, yearly, reduce, scale = 1, onSelect }) {
     const dt = now - l.t;
     if (dt < 4 || dt > 120) return;
     const vx = (x - l.x) / dt, v = Math.hypot(vx, (y - l.y) / dt);
-    if (v > 0.9) {
-      eng.s.shake = Math.max(eng.s.shake, clamp((v - 0.9) / 2.5, 0, 0.9));
-      eng.s.lat = clamp(vx / 2.5, -1, 1);
+    if (v > 0.3) {
+      eng.s.shake = Math.max(eng.s.shake, clamp((v - 0.3) / 1.4, 0, 1));
+      eng.s.lat = clamp(vx / 1.5, -1, 1);
     }
   };
   const onLeave = () => {
@@ -551,12 +564,6 @@ function Tank({ plan, index, yearly, reduce, scale = 1, onSelect }) {
     py.set(0.5);
     eng.s.cur.a = false;
     last.current = null;
-  };
-  const onDown = (e) => {
-    if (e.target.closest(".aq-cta")) return;
-    const [x, y] = pos(e);
-    Object.assign(eng.s.cur, { x, y });
-    eng.feed(x, y);
   };
   const click = () => {
     eng.splash();
@@ -580,8 +587,7 @@ function Tank({ plan, index, yearly, reduce, scale = 1, onSelect }) {
         className: "aq-card",
         style: { rotateX, rotateY, transformPerspective: 1300 },
         onPointerMove: onMove,
-        onPointerLeave: onLeave,
-        onPointerDown: onDown
+        onPointerLeave: onLeave
       },
       /* @__PURE__ */ R.createElement("div", { className: "aq-gl" }),
       /* @__PURE__ */ R.createElement(motion.div, { className: "aq-water", style: { height: eng.water, rotate: waterRot, x: waterX, "--amp": eng.s.amp } }, /* @__PURE__ */ R.createElement(Wave, null), /* @__PURE__ */ R.createElement(Wave, { alt: true })),
